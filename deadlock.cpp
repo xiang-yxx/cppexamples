@@ -1,3 +1,5 @@
+// 一个多线程争夺资源导致死锁的简单例子
+
 #include <iostream>
 #include <mutex>
 #include <thread>

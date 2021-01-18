@@ -18,7 +18,7 @@ public:
     blockqueue(size_t cap) : cb_(cap) {}
     void push_back(const T& e){
         unique_lock<mutex> lck(mtx_);
-        while (is_full()) {
+        while (cb_.full()) {
             not_full_.wait(lck);
         }
         cb_.push_back(e);
@@ -27,7 +27,7 @@ public:
 
     T pop_front() {
         unique_lock<mutex> lck(mtx_);
-        while (is_empty()) {
+        while (cb_.empty()) {
             not_empty_.wait(lck);
         }
         T t = cb_.front();
@@ -37,10 +37,12 @@ public:
     }
 
     bool is_empty() const {
+        unique_lock<mutex> lck(mtx_);
         return cb_.empty();
     }
 
     bool is_full() const {
+        unique_lock<mutex> lck(mtx_);
         return cb_.full();
     }
 

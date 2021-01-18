@@ -15,7 +15,7 @@ using namespace std;
 template<typename T>
 class blockqueue : boost::noncopyable {
 public:
-    blockqueue(size_t cap) : cb_(cap) {}
+    explicit blockqueue(size_t cap) : cb_(cap) {}
     void push_back(const T& e){
         unique_lock<mutex> lck(mtx_);
         while (cb_.full()) {

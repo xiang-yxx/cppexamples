@@ -1,37 +1,37 @@
 #include <iostream>
-#include <sys/timerfd.h>
-#include <string.h>
+#include <thread>
 
+#include "acceptor.h"
 #include "event_loop.h"
-#include "channel.h"
+
 
 using namespace std;
 using namespace lightmuduo;
 
-EventLoop* g_loop;
 
-void timeout() {
-    cout << "time out" << endl;
-    g_loop->quit();
+void newConnection(int sockfd, const InetAddressV4 &peerAddr) {
+    cout << "newConnection(): accept a new connection, addr:" << peerAddr.getHost()
+        << " port:" << peerAddr.getPort() << endl;
+    string ans = "hello\n";
+    ::write(sockfd, ans.c_str(), sizeof(ans.c_str()));
+    if (close(sockfd) < 0) {
+        cerr << "socket::close" << endl;
+    }
 }
 
-int main() {
+int main () {
+    cout << "main pid:" << this_thread::get_id() << endl;
+
+    // 启动后使用 nc 127.0.0.1 8888 连接进行测试
+    InetAddressV4 listenAddr("127.0.0.1", 8888);
     EventLoop loop;
-    g_loop = &loop;
 
-    int timerfd = ::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
-    Channel chan(&loop, timerfd);
-    chan.setReadCallback(timeout);
-    chan.enableReading();
-
-    itimerspec howlong;
-    bzero(&howlong, sizeof howlong);
-    howlong.it_value.tv_sec = 5;
-    ::timerfd_settime(timerfd, 0, &howlong, nullptr);
+    Acceptor acceptor(&loop, listenAddr);
+    acceptor.setNewConnectionCallback(newConnection);
+    acceptor.listen();
 
     loop.loop();
 
-    ::close(timerfd);
-
     return 0;
 }
+
